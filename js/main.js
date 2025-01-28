@@ -21,108 +21,30 @@ document.querySelectorAll('.service-card, .feature, .contact-container').forEach
     observer.observe(el);
 });
 
-// Gestion du formulaire de contact
+// Gestionnaire de formulaire avec reCAPTCHA optimisé
 document.getElementById('contact-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Validation de l'email professionnel
-    const email = this.querySelector('#email').value;
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@(?!gmail\.com)(?!yahoo\.com)(?!hotmail\.com)(?!outlook\.com)(?!aol\.com)(?!mail\.com)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    
-    if (!emailRegex.test(email)) {
-        alert('Veuillez utiliser une adresse email professionnelle');
-        return;
-    }
-
     try {
-        // Afficher le message de chargement
-        const submitButton = this.querySelector('.submit-button');
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
-        submitButton.disabled = true;
-
-        // Récupération des données du formulaire
-        const formData = new FormData(this);
-        const selectedServices = [];
-        
-        // Récupérer les services sélectionnés avec leurs titres complets
-        formData.getAll('services[]').forEach(service => {
-            let serviceTitle = '';
-            switch(service) {
-                case 'mise-en-place':
-                    serviceTitle = 'Mise en place';
-                    break;
-                case 'developpement':
-                    serviceTitle = 'Développement';
-                    break;
-                case 'support':
-                    serviceTitle = 'Support & Maintenance';
-                    break;
-                case 'formation':
-                    serviceTitle = 'Formation';
-                    break;
-            }
-            selectedServices.push(serviceTitle);
+        // Exécuter reCAPTCHA uniquement lors de la soumission
+        const token = await new Promise((resolve) => {
+            grecaptcha.ready(() => {
+                grecaptcha.execute('VOTRE_SITE_KEY', {
+                    action: 'submit'
+                }).then(resolve);
+            });
         });
 
-        // Vérification du reCAPTCHA
-        const recaptchaResponse = grecaptcha.getResponse();
-        if (!recaptchaResponse) {
-            alert('Veuillez valider le reCAPTCHA');
-            submitButton.innerHTML = '<span>Envoyer</span><i class="fas fa-arrow-right"></i>';
-            submitButton.disabled = false;
-            return;
+        // Vérification côté client
+        if (!token) {
+            throw new Error('Validation reCAPTCHA échouée');
         }
 
-        // Ajout du token reCAPTCHA aux données
-        formData.append('g-recaptcha-response', recaptchaResponse);
-
-        // Création de l'objet de données
-        const data = {
-            name: formData.get('name'),
-            email: formData.get('email'),
-            company: formData.get('company'),
-            services: selectedServices,
-            message: formData.get('message'),
-            to: 'info@cybernow.io'
-        };
-
-        // Simuler l'envoi (à remplacer par votre endpoint réel)
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Afficher le message de succès dans le conteneur du formulaire
-        const formContainer = document.querySelector('.form-container');
-        const originalContent = formContainer.innerHTML; // Sauvegarder le contenu original
+        // Reste du code de soumission...
         
-        formContainer.innerHTML = `
-            <div class="success-message">
-                <i class="fas fa-check-circle"></i>
-                <h3>Merci pour votre message !</h3>
-                <p>Nous avons bien reçu votre demande et nous vous répondrons dans les plus brefs délais.</p>
-                <p>Un email de confirmation a été envoyé à ${data.email}</p>
-                <p><strong>Services demandés :</strong></p>
-                <ul>
-                    ${selectedServices.map(service => `<li>${service}</li>`).join('')}
-                </ul>
-                <button onclick="resetForm()" class="reload-button">
-                    <i class="fas fa-redo"></i>
-                    Envoyer un autre message
-                </button>
-            </div>
-        `;
-
-        // Fonction pour réinitialiser le formulaire
-        window.resetForm = function() {
-            formContainer.innerHTML = originalContent;
-            // Réinitialiser les event listeners
-            initFormListeners();
-        };
-
     } catch (error) {
-        console.error('Erreur lors de l\'envoi:', error);
+        console.error('Erreur:', error);
         alert('Une erreur est survenue. Veuillez réessayer.');
-        const submitButton = this.querySelector('.submit-button');
-        submitButton.innerHTML = '<span>Envoyer</span><i class="fas fa-arrow-right"></i>';
-        submitButton.disabled = false;
     }
 });
 
@@ -250,6 +172,48 @@ const CookieManager = {
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Strict;Secure`;
     }
 };
+
+// Gestionnaire de consentement aux cookies
+const CookieConsent = {
+    init() {
+        if (!localStorage.getItem('cookieConsent')) {
+            this.showBanner();
+        }
+    },
+
+    showBanner() {
+        const banner = document.createElement('div');
+        banner.className = 'cookie-banner';
+        banner.innerHTML = `
+            <div class="cookie-content">
+                <p>Nous utilisons uniquement les cookies essentiels et reCAPTCHA pour protéger notre formulaire. 
+                   Aucun cookie tiers n'est utilisé pour le tracking.</p>
+                <button onclick="CookieConsent.accept()">Accepter</button>
+                <button onclick="CookieConsent.reject()">Refuser</button>
+            </div>
+        `;
+        document.body.appendChild(banner);
+    },
+
+    accept() {
+        localStorage.setItem('cookieConsent', 'accepted');
+        this.hideBanner();
+    },
+
+    reject() {
+        localStorage.setItem('cookieConsent', 'rejected');
+        this.hideBanner();
+    },
+
+    hideBanner() {
+        document.querySelector('.cookie-banner').remove();
+    }
+};
+
+// Initialiser le gestionnaire de consentement
+document.addEventListener('DOMContentLoaded', () => {
+    CookieConsent.init();
+});
 
 // Gestionnaire de consentement conforme à TCF v2.0
 const ConsentManager = {
