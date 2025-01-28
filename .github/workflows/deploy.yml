@@ -1,0 +1,51 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        
+    - name: Create dist directory
+      run: |
+        mkdir -p dist/blog/articles
+        mkdir -p dist/images
+        mkdir -p dist/js
+        mkdir -p dist/styles
+        
+    - name: Install dependencies
+      run: |
+        npm install
+        npm install -g postcss-cli autoprefixer cssnano
+        
+    - name: Build
+      run: |
+        cp -r blog dist/ || true
+        cp -r images dist/ || true
+        cp -r js dist/ || true
+        cp -r styles dist/ || true
+        cp index.html dist/
+        cp robots.txt dist/ || true
+        cp sitemap.xml dist/ || true
+        cp .nojekyll dist/
+        
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        branch: gh-pages
+        folder: dist
+        clean: true 

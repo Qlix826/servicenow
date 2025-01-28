@@ -1,0 +1,114 @@
+# Activation de la compression GZIP
+<IfModule mod_deflate.c>
+    # Activation de la compression pour tous les types de fichiers texte
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    
+    # Niveau de compression
+    DeflateCompressionLevel 9
+    
+    # Exclusion des anciens navigateurs
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    
+    # Ne pas compresser les images
+    SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|webp|avif)$ no-gzip dont-vary
+    
+    # Compression des fichiers CSS
+    AddOutputFilterByType DEFLATE text/css
+    <FilesMatch "\.css$">
+        SetOutputFilter DEFLATE
+    </FilesMatch>
+</IfModule>
+
+# Mise en cache navigateur
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    
+    # CSS, JavaScript
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    
+    # Images, Médias
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/avif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    
+    # Fonts
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+    ExpiresByType application/x-font-ttf "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# Protection contre les attaques XSS et autres
+<IfModule mod_headers.c>
+    # Activer la protection XSS pour les navigateurs plus anciens
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Empêcher le MIME-type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Contrôle des frames (protection clickjacking)
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # Politique de référence
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Permissions Policy (anciennement Feature-Policy)
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+    
+    # HSTS (forcer HTTPS)
+    Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    
+    # 1 an pour les ressources statiques
+    <FilesMatch "\.(css|js|jpg|jpeg|png|gif|webp|avif|ico|svg|woff|woff2)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+    
+    # 1 heure pour le HTML
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "max-age=3600, public"
+    </FilesMatch>
+    
+    # Désactiver le cache pour les ressources dynamiques
+    <FilesMatch "\.(php|cgi|pl)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+</IfModule>
+
+# Protection supplémentaire pour les fichiers sensibles
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Désactiver l'affichage du contenu des répertoires
+Options -Indexes
+
+# Protection contre les injections de fichiers
+<FilesMatch "\.(php|php\.|php3|php4|php5|phtml|phps|phar|inc)$">
+    Deny from all
+</FilesMatch>
+
+# Cache pour les fichiers CSS minifiés
+<FilesMatch "\.min\.css$">
+    Header set Cache-Control "max-age=31536000, public"
+</FilesMatch> 

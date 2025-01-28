@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Sitemap: https://qlix826.github.io/servicenow/sitemap.xml
+Disallow: /admin/
+Disallow: /private/
