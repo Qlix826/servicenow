@@ -26,11 +26,19 @@ jobs:
         mkdir -p dist/images
         mkdir -p dist/js
         mkdir -p dist/styles
+        mkdir -p dist/css/fontawesome
         
     - name: Install dependencies
       run: |
         npm install
         npm install -g postcss-cli autoprefixer cssnano
+        
+    - name: Download Font Awesome
+      run: |
+        curl -o dist/css/fontawesome/all.min.css https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css
+        curl -o dist/css/fontawesome/fontawesome.min.css https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/fontawesome.min.css
+        curl -o dist/css/fontawesome/solid.min.css https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/solid.min.css
+        curl -o dist/css/fontawesome/brands.min.css https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css
         
     - name: Build
       run: |
